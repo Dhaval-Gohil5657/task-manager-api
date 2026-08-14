@@ -42,13 +42,92 @@ const createTask = async (req,res) => {
 
 const getTasks = async (req,res) => {
     try {
-        const tasks = await Task.find(
-            { user: req.userId }
-        );
+        const { status, sort, page, limit, search } = req.query;
 
+        const validStatuses = ["pending", "in-progress", "completed"];
+
+        const validSortOptions = ["newest", "oldest"];
+
+        const pageNumber = page? Number(page) : 1;
+        const limitNumber = limit? Number(limit) : 10;
+        const skip = (pageNumber - 1) * limitNumber;
+
+        if (
+            !Number.isInteger(pageNumber) ||
+            !Number.isInteger(limitNumber) ||
+            pageNumber < 1 ||
+            limitNumber < 1
+        ) {
+            return res.status(400).json({
+                message: "Page and limit must be positive integers",
+            });
+        }
+
+        if (status && !validStatuses.includes(status)) {
+            return res.status(400).json({
+                message: "Invalid status",
+            });
+        }
+        
+        if (sort && !validSortOptions.includes(sort)) {
+            return res.status(400).json({
+                message: "Invalid sort option",
+            });
+        }
+        
+        const filter = {
+            user: req.userId
+        };
+
+        if (status) {
+            filter.status = status;
+        }
+
+        if (search) {
+            filter.$or = [
+                {
+                    title: {
+                        $regex: search,
+                        $options: "i",
+                    },
+                },
+                {
+                    description: {
+                        $regex: search,
+                        $options: "i",
+                    },
+                },
+            ];
+        }
+
+        let sortOption = { createdAt: -1 };
+
+        if (sort === "oldest") {
+            sortOption = { createdAt: 1 };
+        }
+
+        const totalTasks = await Task.countDocuments(filter);
+        const totalPages = Math.ceil(totalTasks / limitNumber);
+
+        // Fetch Tasks //
+        const tasks = await Task.find(filter).sort(sortOption).skip(skip).limit(limitNumber);
+
+        if (tasks.length === 0) {
+            return res.status(404).json({
+                message: "No tasks found",
+                tasks: [],
+            });
+        }
+           
         return res.status(200).json({
             message: "Tasks fetched successfully",
-            tasks
+            pagination: {
+                totalTasks,
+                totalPages,
+                currentPage: pageNumber,
+                limit: limitNumber,
+            },
+            tasks,
         });
 
     } catch (error) {
