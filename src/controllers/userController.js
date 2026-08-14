@@ -1,14 +1,13 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
+const { sendError } = require("../utils/response");
 
 const getProfile = async (req,res) => {
     try {
         const user = await User.findById(req.userId);
 
         if (!user) {
-            return res.status(404).json({
-                message: "User not found",
-            });
+            return sendError(res, 404, "User not found");
         }
 
         return res.status(200).json({
@@ -25,9 +24,7 @@ const getProfile = async (req,res) => {
     } catch (error) {
         console.error(error);
         
-        return res.status(500).json({
-            message: "Something went wrong",
-        });
+        return sendError(res, 500, "Internal server error");
     }
 };
 
@@ -36,9 +33,7 @@ const updateProfile = async (req,res) => {
         const {name} = req.body;
 
         if (!name) {
-            return res.status(400).json({
-                message: "Name is required",
-            });
+            return sendError(res, 400, "Name is required");
         }
 
         const user = await User.findByIdAndUpdate(
@@ -50,9 +45,7 @@ const updateProfile = async (req,res) => {
         );
 
         if(!user){
-            return res.status(404).json({
-                message: "User not found"
-            });
+            return sendError(res, 404, "User not found");
         }
 
         return res.status(200).json({
@@ -67,9 +60,7 @@ const updateProfile = async (req,res) => {
     } catch (error) {
         console.error(error);
 
-        return res.status(500).json({
-            message: "Internal server error"
-         });
+        return sendError(res, 500, "Internal server error");
     }
 };
 
@@ -78,16 +69,12 @@ const changePassword = async (req,res) => {
         const { currentPassword, newPassword } = req.body;
 
         if (!currentPassword || !newPassword) {
-            return res.status(400).json({
-                message: "Current password and new password are required"
-            });
+            return sendError(res, 400, "Current password and new password are required");
         }
 
         const user = await User.findById(req.userId);
         if (!user) {
-            return res.status(404).json({
-                message: "User not found"
-            });
+            return sendError(res, 404, "User not found");
         }
 
         const isPasswordValid = await bcrypt.compare(
@@ -96,9 +83,7 @@ const changePassword = async (req,res) => {
         );
 
         if (!isPasswordValid) {
-            return res.status(401).json({
-                message: "Current paswword is incorrect"
-            });
+            return sendError(res, 401, "Current paswword is incorrect");
         }
 
         const hashedPassword = await bcrypt.hash(newPassword,10);
@@ -113,9 +98,7 @@ const changePassword = async (req,res) => {
     } catch (error) {
         console.error(error);
         
-        return res.status(500).json({
-            message: "Internal server error"
-        });
+        return sendError(res, 500, "Internal server error");
     }
 };
 
@@ -124,9 +107,7 @@ const deleteAccount = async (req,res) => {
         const user = await User.findByIdAndDelete(req.userId);
 
         if (!user) {
-            return res.status(404).json({
-                message: "User not found"
-            });
+            return sendError(res, 404, "User not found");
         }
 
         return res.status(200).json({
@@ -135,9 +116,7 @@ const deleteAccount = async (req,res) => {
     } catch (error) {
         console.error(error);
         
-        return res.status(200).json({
-            message: "Password changed successfully"
-        });
+        return sendError(res, 500, "Internal server error");
     }
 }
 

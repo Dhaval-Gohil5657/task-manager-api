@@ -1,23 +1,20 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { sendError } = require("../utils/response");
 
 const registerUser = async (req, res) => {
     try {
         const { name, email, password } = req.body;
 
         if (!name || !email || !password) {
-            return res.status(400).json({
-                message: "Name, email and password are required",
-            });
+            return sendError(res, 400, "Name, email and password are required");
         }
 
         const existingUser = await User.findOne({ email });
 
         if (existingUser) {
-            return res.status(400).json({
-                message: "User already exists",
-            });
+            return sendError(res, 400, "User already exists");
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -40,9 +37,7 @@ const registerUser = async (req, res) => {
     } catch (error) {
         console.error(error);
 
-        return res.status(500).json({
-            message: "Internal server error",
-        });
+        return sendError(res, 500, "Internal server error");
     }
 };
 
@@ -51,17 +46,13 @@ const loginUser = async (req, res) => {
         const { email, password } = req.body;
 
         if (!email || !password) {
-            return res.status(400).json({
-                message: "Email and password are required",
-            });
+            return sendError(res, 400, "Email and password are required");
         }
 
         const user = await User.findOne({ email });
 
         if (!user) {
-            return res.status(401).json({
-                message: "Invalid email or password",
-            });
+            return sendError(res, 404, "User not found");
         }
 
         const isPasswordValid = await bcrypt.compare(
@@ -70,9 +61,7 @@ const loginUser = async (req, res) => {
         );
 
         if (!isPasswordValid) {
-            return res.status(401).json({
-                message: "Invalid email or password",
-            });
+            return sendError(res, 401, "Invalid password");
         }
 
         const token = jwt.sign(
@@ -93,9 +82,7 @@ const loginUser = async (req, res) => {
     } catch (error) {
         console.error(error);
 
-        return res.status(500).json({
-            message: "Internal server error",
-        });
+        return sendError(res, 500, "Internal server error");
     }
 };
 

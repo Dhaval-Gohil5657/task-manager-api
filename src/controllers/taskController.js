@@ -1,14 +1,13 @@
 const Task = require("../models/Task");
 const mongoose = require("mongoose");
+const { sendError } = require("../utils/response");
 
 const createTask = async (req,res) => {
     try {
         const {title, description, status} = req.body;
 
         if (!title || !title.trim()) {
-            return res.status(400).json({
-                message: "Title is required",
-            });
+            return sendError(res, 400, "Title is required");
         }
 
         const task = await Task.create({
@@ -29,14 +28,10 @@ const createTask = async (req,res) => {
         if (error.name === "ValidationError") {
             const message = Object.values(error.errors).map((err) => err.message);
 
-            return res.status(400).json({
-                message,
-            });
+            return sendError(res, 400, message);
         }
 
-        return res.status(500).json({
-            message: "Internal server error",
-        });
+        return sendError(res, 500, "Internal server error");
     }
 };
 
@@ -58,21 +53,15 @@ const getTasks = async (req,res) => {
             pageNumber < 1 ||
             limitNumber < 1
         ) {
-            return res.status(400).json({
-                message: "Page and limit must be positive integers",
-            });
+            return sendError(res, 400, "Page and limit must be positive integers");
         }
 
         if (status && !validStatuses.includes(status)) {
-            return res.status(400).json({
-                message: "Invalid status",
-            });
+            return sendError(res, 400, "Invalid status");
         }
         
         if (sort && !validSortOptions.includes(sort)) {
-            return res.status(400).json({
-                message: "Invalid sort option",
-            });
+            return sendError(res, 400, "Invalid sort option");
         }
         
         const filter = {
@@ -132,9 +121,8 @@ const getTasks = async (req,res) => {
 
     } catch (error) {
         console.error(error);
-        return res.status(500).json({
-            message: "Internal server error"
-        });
+        
+        return sendError(res, 500, "Internal server error");
     }
 };
 
@@ -143,9 +131,7 @@ const getTaskById = async (req,res) => {
         const {id} = req.params;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({
-                message: "Invalid task Id"
-            });
+            return sendError(res, 400, "Invalid task Id");
         }
 
         const task = await Task.findOne({
@@ -154,9 +140,7 @@ const getTaskById = async (req,res) => {
         });
 
         if (!task) {
-            return res.status(404).json({
-                message: "Task not found",
-            });
+            return sendError(res, 404, "Task not found");
         }
 
         return res.status(200).json({
@@ -167,9 +151,7 @@ const getTaskById = async (req,res) => {
     } catch (error) {
         console.error(error);
 
-        return res.status(500).json({
-            message: "Internal server error",
-        });
+        return sendError(res, 500, "Internal server error");
         
     }
 };
@@ -179,9 +161,7 @@ const updateTask = async (req,res) => {
         const {id} = req.params;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({
-                message: "Invalid task Id"
-            });
+            return sendError(res, 400, "Invalid task Id");
         }
 
         const { title, description,status } = req.body;
@@ -190,9 +170,7 @@ const updateTask = async (req,res) => {
 
         if (title !== undefined) {
             if(!title.trim()){
-                return res.status(400).json({
-                    message: "Title cannot be empty",
-                });
+                return sendError(res, 400, "Title cannot be empty");
             }
 
             updateData.title = title;
@@ -207,9 +185,7 @@ const updateTask = async (req,res) => {
         }
 
         if (Object.keys(updateData).length === 0) {
-            return res.status(400).json({
-                message: "At least one field is required to update",
-            });
+            return sendError(res, 400, "At least one field is required to update");
         }
 
         const task = await Task.findOneAndUpdate(
@@ -225,9 +201,7 @@ const updateTask = async (req,res) => {
         );
 
         if (!task) {
-            return res.status(404).json({
-                message: "Task not found",
-            });
+            return sendError(res, 404, "Task not found");
         }
 
         return res.status(200).json({
@@ -240,14 +214,10 @@ const updateTask = async (req,res) => {
         if (error.name === "ValidationError") {
             const message = Object.values(error.errors).map((err) => err.message);
 
-            return res.status(400).json({
-                message,
-            });
+            return sendError(res, 400, message);
         }
 
-        return res.status(500).json({
-            message: "Internal server error",
-        });
+        return sendError(res, 500, "Internal server error");
     }
 };
 
@@ -256,9 +226,7 @@ const deleteTask = async (req,res) => {
         const {id} = req.params;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({
-                message: "Invalid task Id"
-            });
+            return sendError(res, 400, "Invalid task Id");
         }
 
         const task= await Task.findOneAndDelete({
@@ -266,9 +234,7 @@ const deleteTask = async (req,res) => {
                 user: req.userId
         })
         if (!task) {
-            return res.status(404).json({
-                message: "Task not found",
-            });
+            return sendError(res, 404, "Task not found");
         }
 
         return res.status(200).json({
@@ -278,9 +244,7 @@ const deleteTask = async (req,res) => {
     } catch (error) {
         console.error(error);
 
-        return res.status(500).json({
-            message: "Internal server error",
-        });
+        return sendError(res, 500, "Internal server error");
     }
 }
 
